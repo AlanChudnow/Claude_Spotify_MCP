@@ -20,38 +20,7 @@ curate, and create playlists directly in your Spotify account.
 pip install -r requirements.txt
 ```
 
-### 3. Set environment variables
-
-**Mac/Linux:**
-```bash
-export SPOTIFY_CLIENT_ID=your_client_id_here
-export SPOTIFY_CLIENT_SECRET=your_client_secret_here
-```
-
-**Windows (Command Prompt):**
-```cmd
-set SPOTIFY_CLIENT_ID=your_client_id_here
-set SPOTIFY_CLIENT_SECRET=your_client_secret_here
-```
-
-### 4. Get your refresh token
-
-```
-python setup/get_refresh_token.py
-```
-
-A browser window will open asking you to authorize the app. Click **Allow**.
-Your refresh token will be printed in the terminal — copy it.
-
-### 5. Verify everything works
-
-```
-python setup/check_setup.py
-```
-
-You should see: `✅ SpotifyMCP is ready. Connected as: [your username]`
-
-### 6. Add to Claude Desktop config
+### 3. Add to Claude Desktop config
 
 Open your Claude Desktop config file:
 
@@ -65,23 +34,57 @@ Add this inside the `"mcpServers"` object (create the object if it doesn't exist
   "mcpServers": {
     "SpotifyMCP": {
       "command": "python",
-      "args": ["C:\\Users\\Daddy\\Apps\\SpotifyMCP\\server.py"],
-      "env": {
-        "SPOTIFY_CLIENT_ID": "PASTE_YOUR_CLIENT_ID_HERE",
-        "SPOTIFY_CLIENT_SECRET": "PASTE_YOUR_CLIENT_SECRET_HERE",
-        "SPOTIFY_REFRESH_TOKEN": "PASTE_YOUR_REFRESH_TOKEN_HERE"
-      }
+      "args": ["C:\\Users\\Daddy\\Apps\\SpotifyMCP\\server.py"]
     }
   }
 }
 ```
 
-Replace the three placeholder values with your actual credentials.
+### 4. Restart Claude Desktop
 
-### 7. Restart Claude Desktop
+Quit and reopen Claude Desktop.
 
-Quit and reopen Claude Desktop. The SpotifyMCP tools will be available in your
-next conversation.
+### 5. Run first-time auth from inside Claude
+
+In a new conversation, call the setup tool with your app credentials:
+
+```
+spotify_setup(client_id="YOUR_CLIENT_ID", client_secret="YOUR_CLIENT_SECRET")
+```
+
+A browser window will open asking you to authorize the app. Click **Allow**.
+SpotifyMCP will catch the callback automatically, save your credentials, and
+confirm with: `✅ Spotify connected successfully as [your username].`
+
+You never need to do this again — credentials are saved to
+`C:\Users\Daddy\.keys\spotify.json` and loaded automatically on every start.
+
+---
+
+## How Credentials Work
+
+Credentials are stored in `C:\Users\Daddy\.keys\spotify.json` in this format:
+
+```json
+{
+  "SpotifyKeys": {
+    "SpotifyMCP": {
+      "SPOTIFY_CLIENT_ID": "your_client_id",
+      "SPOTIFY_CLIENT_SECRET": "your_client_secret",
+      "SPOTIFY_REFRESH_TOKEN": "your_refresh_token"
+    }
+  }
+}
+```
+
+The server loads credentials in this priority order:
+1. `C:\Users\Daddy\.keys\spotify.json` *(takes priority)*
+2. Environment variables `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`,
+   `SPOTIFY_REFRESH_TOKEN` *(fallback)*
+
+You do not need to put credentials in the Claude Desktop config file.
+Token refresh is handled automatically and silently — you will never be
+asked to re-authenticate during normal use.
 
 ---
 
@@ -116,6 +119,7 @@ present them for your approval, then create the playlist when you say
 
 | Tool | Description |
 |------|-------------|
+| `spotify_setup` | Set up or repair authentication from inside Claude — no terminal needed |
 | `spotify_search_tracks` | Search by title, artist, album, year — supports advanced operators |
 | `spotify_search_album` | Find a specific album and its full track listing |
 | `spotify_find_track` | Smart single-track lookup with alternate title handling |
@@ -130,11 +134,17 @@ present them for your approval, then create the playlist when you say
 
 ## Troubleshooting
 
-**"Spotify authentication failed"** — Run `python setup/get_refresh_token.py` again.
-Refresh tokens can expire if unused for a long time or if you revoke app access.
+**"Spotify authentication failed"** — Call the `spotify_setup` tool from inside
+Claude. No terminal required. If you've revoked app access or the refresh token
+has expired, `spotify_setup` will walk you through re-authorizing.
 
 **Track not found** — Ask Claude to search for alternate titles. Some tracks appear
 under different names (e.g., "Stroll On" instead of "Train Kept A-Rollin'").
 
 **Server doesn't start** — Make sure `pip install -r requirements.txt` completed
 successfully, and that you're using Python 3.10+.
+
+**Credentials not loading** — Confirm `C:\Users\Daddy\.keys\spotify.json` exists
+and contains all three keys (`SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`,
+`SPOTIFY_REFRESH_TOKEN`) nested under `SpotifyKeys.SpotifyMCP`. Running
+`spotify_setup` again will recreate this file correctly.
