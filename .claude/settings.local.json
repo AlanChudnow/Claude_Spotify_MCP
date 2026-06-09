@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(SPOTIFY_CLIENT_ID=36e5b341e50547e4a4dcb8b36e813abf SPOTIFY_CLIENT_SECRET=2f9875dafe7e4ad8a02a60913bc7946e python setup/get_refresh_token.py)"
+    ]
+  }
+}
